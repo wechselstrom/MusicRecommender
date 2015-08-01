@@ -12,7 +12,7 @@ if you get the following error:
 AttributeError: 'FigureManagerGTK3Cairo' object has no attribute 'canvas'
 ignore it, its a bug in matplotlib waiting to be fixed. It does not harm the functionality.
 
-The program uses the lastFM data set. A small portion (the ~3.5k artists with most listeners)
+The program uses the lastFM data set. A small portion (the ~3.2k artists with most listeners)
 has been distilled into the dMat.p file, but in order to get more artists it is advised to build it yourself.
 To do this Just do the following:
 grab the dataset from this source:

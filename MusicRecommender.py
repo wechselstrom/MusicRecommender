@@ -9,8 +9,18 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 
+
+bands = ['metallica','rage against the machine', 'skindred','caliban','die Ärzte','muse', 'dropkick murphys', 'franz ferdinand',
+        'die toten hosen','in flames', 'dark tranquillity', 'equilibrium','rammstein']
+#bands = ['50 cent','kollegah','k.i.z.','sido','fatboy slim', 'eminem', '2pac', 'kool savas']
+numberRecommendations = 400
+outfilename = 'plot.pdf'
+
 fn = "usersha1-artmbid-artname-plays.tsv"
 dissimilarityMatrixFilename = 'dMat.p'
+
+minListeners = 200
+
 
 verbose = True
 
@@ -53,7 +63,7 @@ def buildDataStructures(filename):
         print("the interprets dict now contains %d elements" % n)
 
     for key in list(interpretMap):
-        if len(interpretMap[key]) < 200:
+        if len(interpretMap[key]) < minListeners:
             del interpretMap[key]
     m = len(interpretMap)
     if verbose:
@@ -105,11 +115,12 @@ def init():
             (dM, itA, AtI) =pickle.load(f)
     except FileNotFoundError:
         if verbose: print('could not find %s\n falling back to generating it from the dataset' % dissimilarityMatrixFilename) 
-        _, _, AtI, itA = buildDataStructures(fn)
+        lmat, _, AtI, itA = buildDataStructures(fn)
         simMat = lmat.dot(lmat.transpose()).todense()
         dM = genDisMat(simMat)
         with open('dMat.p','wb') as f:
             pickle.dump((dM,itA,AtI),f)
+    if verbose: print('loaded file with %d artists' % dM.shape[0])
     return dM, itA, AtI
 
 
@@ -117,16 +128,13 @@ def main():
     """takes a list of artists and recommends a number of simmiliar artists.
     then uses multidimensional scaling to embed the artists according to their simmilarity in a diagram.
     """
-    numberRecommendations = 400
-    #bands = ['50 cent','kollegah','k.i.z.','sido','fatboy slim', 'eminem', '2pac', 'kool savas']
-    bands = ['metallica','rage against the machine','wizo', 'skindred','caliban','die Ärzte','muse', 'dropkick murphys', 'franz ferdinand',
-            'die toten hosen','in flames', 'dark tranquillity', 'equilibrium','rammstein']
+
 
     dM, itA, AtI = init()
-    bands = findClosest(dM, AtI, itA, bands, numberRecommendations)
+    recommendedBands = findClosest(dM, AtI, itA, bands, numberRecommendations)
     if verbose: print('recommended %d artists. generating plot.' % numberRecommendations)
     #bands =AtI.keys()
-    bandIndices=[index for index in list(map(lambda x: AtI[x],bands))]
+    bandIndices=[index for index in list(map(lambda x: AtI[x],recommendedBands))]
     dM = dM[np.ix_(bandIndices,bandIndices)] ##shrink to indices
     if dim3d:
         mds = sklearn.manifold.MDS(n_components=3, dissimilarity='precomputed')
@@ -140,7 +148,7 @@ def main():
         ax.scatter(p[:,0],p[:,1])
         for i, txt in enumerate(bands):
             ax.annotate(txt, (p[i,0],p[i,1]+0.05), fontsize=12, ha="center")
-    fig.savefig('plot.pdf',format='pdf')
+    fig.savefig(outfilename,format='pdf')
 
 
     #plt.show()
